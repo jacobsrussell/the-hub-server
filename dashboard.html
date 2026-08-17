@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Hub — Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060915;color:#e5e7eb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;display:flex}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:3px}
+.hide{display:none!important}
+
+/* SIDEBAR */
+.sidebar{width:240px;min-height:100vh;background:linear-gradient(180deg,#0c0f1e 0%,#111827 100%);border-right:1px solid rgba(255,255,255,.06);position:fixed;left:0;top:0;bottom:0;overflow-y:auto;z-index:50;padding-bottom:20px}
+.sb-head{padding:20px 18px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:10px}
+.sb-head img{width:32px;height:32px;border-radius:8px}
+.sb-head h1{font-size:17px;font-weight:900;background:linear-gradient(135deg,#8b5cf6,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-head .ver{font-size:10px;color:#6b7280;margin-top:1px}
+.sb-section{padding:14px 12px 6px;font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1.5px;font-weight:700}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 16px;margin:1px 8px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;color:#9ca3af;transition:all .15s}
+.sb-item:hover{background:rgba(255,255,255,.05);color:#e5e7eb}
+.sb-item.active{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(34,211,238,.1));color:#fff;border-left:3px solid #8b5cf6}
+.sb-item .icon{width:20px;text-align:center;font-size:15px}
+.sb-item .badge{margin-left:auto;background:#ef4444;color:#fff;font-size:10px;padding:2px 6px;border-radius:6px;font-weight:700}
+.sb-wallet{margin:8px 12px;padding:12px;border-radius:12px;background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(34,211,238,.08));border:1px solid rgba(34,197,94,.15)}
+.sb-wallet .wl-label{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:1px}
+.sb-wallet .wl-val{font-size:20px;font-weight:900;color:#22c55e;margin-top:2px}
+.sb-wallet .wl-sub{font-size:11px;color:#9ca3af;margin-top:2px}
+.sb-footer{position:absolute;bottom:0;left:0;right:0;padding:12px 16px;font-size:10px;color:#4b5563;text-align:center;border-top:1px solid rgba(255,255,255,.04)}
+
+/* MAIN */
+.main{margin-left:240px;flex:1;min-height:100vh}
+.hdr{background:linear-gradient(135deg,#8b5cf6,#22d3ee);padding:24px 28px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:40}
+.hdr h1{font-size:22px;font-weight:900;color:#fff}
+.hdr .sub{color:rgba(255,255,255,.7);font-size:12px;margin-top:2px}
+.hdr .spacer{flex:1}
+.hdr .refresh{background:rgba(255,255,255,.2);border:none;color:#fff;padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+.hdr .refresh:hover{background:rgba(255,255,255,.3)}
+.dot{width:8px;height:8px;border-radius:50%;background:#22c55e;display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* STATS */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;padding:20px 28px}
+.stat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:16px;text-align:center;transition:transform .2s}
+.stat:hover{transform:translateY(-2px)}
+.stat .v{font-size:28px;font-weight:900;background:linear-gradient(135deg,#8b5cf6,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat .l{font-size:11px;color:#9ca3af;margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
+.stat.green .v{background:linear-gradient(135deg,#22c55e,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat.red .v{background:linear-gradient(135deg,#ef4444,#f43f5e);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat.amber .v{background:linear-gradient(135deg,#f59e0b,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* PANELS */
+.row{display:grid;gap:16px;padding:0 28px 28px}
+.row-2{grid-template-columns:1fr 1fr}
+.row-3{grid-template-columns:1fr 1fr 1fr}
+.row-2-1{grid-template-columns:2fr 1fr}
+.row-1-2{grid-template-columns:1fr 2fr}
+@media(max-width:1100px){.row-3{grid-template-columns:1fr 1fr}}
+@media(max-width:900px){.row-2,.row-3,.row-2-1,.row-1-2{grid-template-columns:1fr}}
+.card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px}
+.card h3{font-size:14px;font-weight:800;margin-bottom:10px;color:#f3f4f6;display:flex;align-items:center;gap:8px}
+.card h3 .badge{background:linear-gradient(135deg,#8b5cf6,#22d3ee);color:#fff;font-size:10px;padding:2px 7px;border-radius:6px;font-weight:700}
+.search{width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.05);color:#fff;font-size:12px;margin-bottom:10px;outline:none}
+.search:focus{border-color:#8b5cf6}
+
+/* USER LIST */
+.u-list{max-height:360px;overflow-y:auto}
+.u-item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:8px;margin-bottom:3px;background:rgba(255,255,255,.02);transition:background .15s}
+.u-item:hover{background:rgba(255,255,255,.06)}
+.u-item .av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:800;flex-shrink:0}
+.u-item .info{flex:1;min-width:0}
+.u-item .nm{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.u-item .meta{font-size:10px;color:#9ca3af}
+.st{font-size:10px;font-weight:600}
+.st.on{color:#22c55e}
+.st.off{color:#6b7280}
+
+/* TRADING */
+.trader-item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;margin-bottom:3px;background:rgba(255,255,255,.02)}
+.trader-item .rank{font-size:11px;font-weight:800;color:#6b7280;width:20px;text-align:center;flex-shrink:0}
+.trader-item .rank.gold{color:#fbbf24}
+.trader-item .rank.silver{color:#9ca3af}
+.trader-item .rank.bronze{color:#f97316}
+.trader-item .info{flex:1;min-width:0}
+.trader-item .nm{font-weight:700;font-size:13px}
+.trader-item .meta{font-size:10px;color:#9ca3af}
+.trader-item .val{text-align:right;flex-shrink:0}
+.trader-item .val .cash{font-size:13px;font-weight:800;color:#22c55e}
+.trader-item .val .hold{font-size:10px;color:#9ca3af}
+
+/* AD LIST */
+.ad-item{padding:10px;border-radius:8px;margin-bottom:6px;background:rgba(255,255,255,.02);border-left:3px solid transparent}
+.ad-item.live{border-left-color:#22c55e}
+.ad-item.paused{border-left-color:#f59e0b}
+.ad-item.ended{border-left-color:#6b7280}
+.ad-item .ad-head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.ad-item .ad-owner{font-weight:700;font-size:12px}
+.ad-item .ad-title{font-size:13px;font-weight:700;color:#e5e7eb}
+.ad-item .ad-body{font-size:12px;color:#9ca3af;margin:4px 0 6px;line-height:1.4}
+.ad-item .ad-stats{display:flex;gap:12px;font-size:11px;color:#9ca3af;flex-wrap:wrap}
+.ad-item .ad-stats span{display:flex;align-items:center;gap:3px}
+.ad-item .ad-status{font-size:10px;padding:2px 6px;border-radius:5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.ad-item .ad-status.live{background:rgba(34,197,94,.15);color:#22c55e}
+.ad-item .ad-status.paused{background:rgba(245,158,11,.15);color:#f59e0b}
+.ad-item .ad-status.ended{background:rgba(107,114,128,.15);color:#6b7280}
+.budget-bar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:6px;overflow:hidden}
+.budget-bar .fill{height:100%;border-radius:2px;background:linear-gradient(90deg,#8b5cf6,#22d3ee);transition:width .3s}
+
+/* LOG */
+#log{max-height:320px;overflow-y:auto;font-size:12px;font-family:'SF Mono',Consolas,monospace;line-height:1.7}
+.le{padding:3px 6px;border-radius:6px;margin-bottom:1px;background:rgba(255,255,255,.02);display:flex;gap:6px}
+.le .ts{color:#6b7280;flex-shrink:0;min-width:60px}
+.le .txt{flex:1;min-width:0;word-break:break-word}
+
+/* POSTS */
+.post-item{padding:10px;border-radius:8px;margin-bottom:5px;background:rgba(255,255,255,.02)}
+.post-item .ph{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.post-item .pav{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:800;flex-shrink:0}
+.post-item .pn{font-weight:700;font-size:12px}
+.post-item .pt{font-size:11px;color:#6b7280;margin-left:auto}
+.post-item .pb{font-size:12px;color:#d1d5db;line-height:1.4;margin-bottom:4px}
+.post-item .ps{display:flex;gap:10px;font-size:11px;color:#9ca3af}
+.post-list{max-height:360px;overflow-y:auto}
+
+/* CONTACTS */
+.ct-item{display:flex;align-items:center;gap:8px;padding:6px;border-radius:8px;margin-bottom:2px;background:rgba(255,255,255,.02)}
+.ct-item .av{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#22d3ee,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:800;flex-shrink:0}
+.ct-item .nm{font-weight:600;font-size:12px}
+.ct-item .meta{font-size:10px;color:#9ca3af}
+.ct-list{max-height:360px;overflow-y:auto}
+
+/* LOGIN */
+.login-wrap{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:#060915}
+.login-box{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px 32px;width:100%;max-width:380px;text-align:center}
+.login-box h2{font-size:22px;font-weight:900;margin-bottom:6px;background:linear-gradient(135deg,#8b5cf6,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-box p{color:#9ca3af;font-size:13px;margin-bottom:24px}
+.login-box input{width:100%;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);color:#fff;font-size:15px;margin-bottom:12px;outline:none}
+.login-box input:focus{border-color:#8b5cf6}
+.login-box button{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#22d3ee);color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.login-box .err{color:#f87171;font-size:13px;margin-top:10px;display:none}
+@media(max-width:700px){.sidebar{display:none}.main{margin-left:0}}
+</style>
+</head>
+<body>
+
+<div id="loginPage" class="login-wrap">
+  <div class="login-box">
+    <h2>The Hub Dashboard</h2>
+    <p>Enter admin credentials to continue</p>
+    <input id="loginUser" placeholder="Username" autocomplete="username">
+    <input id="loginPass" type="password" placeholder="Password" autocomplete="current-password">
+    <button onclick="doLogin()">Log in</button>
+    <div class="err" id="loginErr">Invalid username or password</div>
+  </div>
+</div>
+
+<div id="dashContent" class="hide" style="display:flex;width:100%">
+<aside class="sidebar">
+  <div class="sb-head">
+    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%238b5cf6'/%3E%3Cstop offset='100%25' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-size='18' font-weight='bold' fill='white'%3EH%3C/text%3E%3C/svg%3E" alt="Hub">
+    <div><h1>The Hub</h1><div class="ver">Admin Dashboard v2.0</div></div>
+  </div>
+  <div class="sb-section">Overview</div>
+  <div class="sb-item active" data-page="overview" onclick="showPage('overview')"><span class="icon">📊</span>Overview</div>
+  <div class="sb-item" data-page="users" onclick="showPage('users')"><span class="icon">👥</span>Users <span class="badge" id="sbUsers">0</span></div>
+  <div class="sb-item" data-page="posts" onclick="showPage('posts')"><span class="icon">📝</span>Posts <span class="badge" id="sbPosts">0</span></div>
+  <div class="sb-section">Hub & Money</div>
+  <div class="sb-item" data-page="trading" onclick="showPage('trading')"><span class="icon">📈</span>Trading</div>
+  <div class="sb-item" data-page="ads" onclick="showPage('ads')"><span class="icon">📣</span>Ad Centre <span class="badge" id="sbAds">0</span></div>
+  <div class="sb-item" data-page="revenue" onclick="showPage('revenue')"><span class="icon">💰</span>Revenue</div>
+  <div class="sb-section">Data</div>
+  <div class="sb-item" data-page="contacts" onclick="showPage('contacts')"><span class="icon">📇</span>Contacts</div>
+  <div class="sb-item" data-page="activity" onclick="showPage('activity')"><span class="icon">⚡</span>Activity</div>
+  <div class="sb-wallet">
+    <div class="wl-label">Hub Revenue</div>
+    <div class="wl-val" id="sbRevenue">R0</div>
+    <div class="wl-sub">ad spend + trading fees</div>
+  </div>
+  <div class="sb-footer">Create · Watch · Trade · Get paid</div>
+</aside>
+
+<div class="main">
+<div class="hdr">
+  <div><h1 id="pageTitle">Overview</h1><div class="sub" id="status">Connecting…</div></div>
+  <div class="dot" id="dot" style="display:none"></div>
+  <div class="spacer"></div>
+  <button class="refresh" onclick="refreshAll()">⟳ Refresh</button>
+</div>
+
+<!-- OVERVIEW PAGE -->
+<div id="page-overview">
+<div class="grid">
+  <div class="stat"><div class="v" id="sOnline">0</div><div class="l">Online now</div></div>
+  <div class="stat"><div class="v" id="sUsers">0</div><div class="l">Total users</div></div>
+  <div class="stat"><div class="v" id="sPosts">0</div><div class="l">Posts</div></div>
+  <div class="stat"><div class="v" id="sMsgs">0</div><div class="l">Messages</div></div>
+  <div class="stat green"><div class="v" id="sAdSpend">R0</div><div class="l">Ad spend</div></div>
+  <div class="stat amber"><div class="v" id="sTradingVol">0</div><div class="l">Trades</div></div>
+  <div class="stat"><div class="v" id="sContacts">0</div><div class="l">Contacts</div></div>
+  <div class="stat"><div class="v" id="sUptime">0s</div><div class="l">Uptime</div></div>
+</div>
+<div class="row row-2-1">
+  <div class="card"><h3>Connected Users <span class="badge" id="onlineBadge">0</span></h3><input class="search" id="userSearch" placeholder="Search users…" oninput="filterUsers()"><div class="u-list" id="uList"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+  <div class="card"><h3>Recent Activity</h3><div id="log" style="max-height:420px"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Waiting for events…</div></div></div>
+</div>
+</div>
+
+<!-- USERS PAGE -->
+<div id="page-users" class="hide">
+<div class="row row-2-1">
+  <div class="card"><h3>All Users <span class="badge" id="allUserBadge">0</span></h3><input class="search" id="allUserSearch" placeholder="Search users…" oninput="filterAllUsers()"><div class="u-list" id="allUserList"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+  <div class="card"><h3>User Stats</h3><div id="userStats"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+</div>
+</div>
+
+<!-- POSTS PAGE -->
+<div id="page-posts" class="hide">
+<div class="row row-2-1">
+  <div class="card"><h3>Recent Posts <span class="badge" id="postBadge">0</span></h3><input class="search" id="postSearch" placeholder="Search posts…" oninput="filterPosts()"><div class="post-list" id="postList"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+  <div class="card"><h3>Post Stats</h3><div id="postStats"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+</div>
+</div>
+
+<!-- TRADING PAGE -->
+<div id="page-trading" class="hide">
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+  <div class="stat green"><div class="v" id="tTotalCash">R0</div><div class="l">Total cash</div></div>
+  <div class="stat amber"><div class="v" id="tTotalTrades">0</div><div class="l">Total trades</div></div>
+  <div class="stat"><div class="v" id="tAdRegistered">0</div><div class="l">Ad registered</div></div>
+  <div class="stat red"><div class="v" id="tTotalAdSpend">R0</div><div class="l">Total ad spend</div></div>
+</div>
+<div class="row row-2">
+  <div class="card"><h3>Leaderboard <span class="badge" id="leaderBadge">0</span></h3><input class="search" id="traderSearch" placeholder="Search traders…" oninput="filterTraders()"><div class="u-list" id="traderList"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+  <div class="card"><h3>Top Holdings</h3><div class="u-list" id="holdingsList"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+</div>
+</div>
+
+<!-- ADS PAGE -->
+<div id="page-ads" class="hide">
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+  <div class="stat green"><div class="v" id="aTotalSpend">R0</div><div class="l">Total spend</div></div>
+  <div class="stat"><div class="v" id="aTotalImpressions">0</div><div class="l">Impressions</div></div>
+  <div class="stat"><div class="v" id="aTotalClicks">0</div><div class="l">Clicks</div></div>
+  <div class="stat amber"><div class="v" id="aActiveAds">0</div><div class="l">Active ads</div></div>
+</div>
+<div class="row row-2">
+  <div class="card"><h3>All Ad Campaigns <span class="badge" id="adBadge">0</span></h3><input class="search" id="adSearch" placeholder="Search ads…" oninput="filterAds()"><div id="adList" style="max-height:480px;overflow-y:auto"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+  <div class="card"><h3>Ad Performance</h3><div id="adPerf"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+</div>
+</div>
+
+<!-- REVENUE PAGE -->
+<div id="page-revenue" class="hide">
+<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+  <div class="stat green"><div class="v" id="rAdRevenue">R0</div><div class="l">Ad revenue</div></div>
+  <div class="stat amber"><div class="v" id="rTradingFees">R0</div><div class="l">Trading fees</div></div>
+  <div class="stat"><div class="v" id="rTotalRevenue">R0</div><div class="l">Total revenue</div></div>
+</div>
+<div class="row row-2">
+  <div class="card"><h3>Revenue Breakdown</h3><div id="revenueBreakdown"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+  <div class="card"><h3>Top Earners</h3><div class="u-list" id="earnerList"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+</div>
+</div>
+
+<!-- CONTACTS PAGE -->
+<div id="page-contacts" class="hide">
+<div class="row row-2">
+  <div class="card"><h3>Synced Contacts <span class="badge" id="contactBadge">0</span></h3><input class="search" id="contactSearch" placeholder="Search contacts…" oninput="filterContacts()"><div class="ct-list" id="contactsList"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+  <div class="card"><h3>Contact Sources</h3><div id="contactSources"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+</div>
+</div>
+
+<!-- ACTIVITY PAGE -->
+<div id="page-activity" class="hide">
+<div class="row row-2">
+  <div class="card"><h3>Live Activity Feed</h3><div id="logFull" style="max-height:520px;overflow-y:auto;font-size:12px;font-family:'SF Mono',Consolas,monospace;line-height:1.7"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Waiting for events…</div></div></div>
+  <div class="card"><h3>Recent Posts</h3><div class="post-list" id="recentPostsMini" style="max-height:520px"><div class="empty" style="text-align:center;padding:30px;color:#6b7280">Loading…</div></div></div>
+</div>
+</div>
+
+</div>
+</div>
+
+<script>
+let allUsers=[],allPosts=[],allContacts=[],allAds=[],allTrading=[];
+let allUserMap={},page='overview';
+const fmtR=v=>'R'+Number(v||0).toLocaleString('en-ZA',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtN=v=>Number(v||0).toLocaleString();
+const esc=s=>{const d=document.createElement('div');d.textContent=s;return d.innerHTML;};
+const fmtTime=ts=>{const d=new Date(ts),now=new Date(),diff=(now-d)/1000;if(diff<60)return'just now';if(diff<3600)return Math.floor(diff/60)+'m ago';if(diff<86400)return Math.floor(diff/3600)+'h ago';return d.toLocaleDateString();};
+
+function showPage(p){
+  page=p;
+  document.querySelectorAll('.sb-item').forEach(el=>{el.classList.toggle('active',el.dataset.page===p);});
+  document.querySelectorAll('[id^="page-"]').forEach(el=>{el.classList.toggle('hide',el.id!=='page-'+p);});
+  const titles={overview:'Overview',users:'Users',posts:'Posts',trading:'Trading',ads:'Ad Centre',revenue:'Revenue',contacts:'Contacts',activity:'Activity'};
+  document.getElementById('pageTitle').textContent=titles[p]||'Overview';
+}
+
+function doLogin(){
+  const u=document.getElementById('loginUser').value;
+  const p=document.getElementById('loginPass').value;
+  if(u==='admin'&&p==='thehub123'){
+    document.getElementById('loginPage').classList.add('hide');
+    document.getElementById('dashContent').style.display='flex';
+    refreshAll();
+  } else {
+    document.getElementById('loginErr').style.display='block';
+  }
+}
+document.getElementById('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+function refreshAll(){updStats();updUsers();updPosts();updContacts();updTrading();updAds();}
+
+function updStats(){
+  return fetch('/api/stats').then(r=>r.json()).then(d=>{
+    document.getElementById('sOnline').textContent=d.online;
+    document.getElementById('sUsers').textContent=d.users;
+    document.getElementById('sPosts').textContent=d.posts;
+    document.getElementById('sMsgs').textContent=d.messages;
+    const h=Math.floor(d.uptime/3600),m=Math.floor((d.uptime%3600)/60),s=d.uptime%60;
+    document.getElementById('sUptime').textContent=h?`${h}h ${m}m`:`${m}m ${s}s`;
+    document.getElementById('sbUsers').textContent=d.users;
+    document.getElementById('sbPosts').textContent=d.posts;
+  }).catch(()=>{});
+}
+
+function updUsers(){
+  return fetch('/api/users').then(r=>r.json()).then(list=>{
+    allUsers=list;allUserMap={};list.forEach(u=>{allUserMap[u.id]=u;});
+    document.getElementById('onlineBadge').textContent=list.filter(u=>u.online).length;
+    document.getElementById('allUserBadge').textContent=list.length;
+    renderUsers(list);renderAllUsers(list);renderUserStats(list);
+  }).catch(()=>{});
+}
+
+function renderUsers(list){
+  const el=document.getElementById('uList');
+  if(!list.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No users</div>';return;}
+  const sorted=[...list].sort((a,b)=>b.online-a.online||(b.followers||0)-(a.followers||0)).slice(0,20);
+  el.innerHTML=sorted.map(u=>`<div class="u-item"><div class="av" style="background:${u.grad||'linear-gradient(135deg,#8b5cf6,#22d3ee)'}">${(u.emoji||u.name||'?')[0]}</div><div class="info"><div class="nm">${esc(u.name||'Unknown')} <span style="color:#6b7280;font-weight:400;font-size:11px">${esc(u.handle||'')}</span></div><div class="meta">${u.role||'user'} · ${fmtN(u.followers)} followers</div></div><span class="st ${u.online?'on':'off'}">${u.online?'Online':'Offline'}</span></div>`).join('');
+}
+function filterUsers(){const q=document.getElementById('userSearch').value.toLowerCase();renderUsers(allUsers.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.handle||'').toLowerCase().includes(q)));}
+
+function renderAllUsers(list){
+  const el=document.getElementById('allUserList');
+  if(!list.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No users</div>';return;}
+  el.innerHTML=[...list].sort((a,b)=>b.online-a.online||(b.followers||0)-(a.followers||0)).map(u=>`<div class="u-item"><div class="av" style="background:${u.grad||'linear-gradient(135deg,#8b5cf6,#22d3ee)'}">${(u.emoji||u.name||'?')[0]}</div><div class="info"><div class="nm">${esc(u.name||'Unknown')} <span style="color:#6b7280;font-weight:400;font-size:11px">${esc(u.handle||'')}</span></div><div class="meta">${u.role||'user'} · ${fmtN(u.followers)} followers</div></div><span class="st ${u.online?'on':'off'}">${u.online?'Online':'Offline'}</span></div>`).join('');
+}
+function filterAllUsers(){const q=document.getElementById('allUserSearch').value.toLowerCase();renderAllUsers(allUsers.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.handle||'').toLowerCase().includes(q)||(u.role||'').toLowerCase().includes(q)));}
+
+function renderUserStats(list){
+  const online=list.filter(u=>u.online),roles={},grads={};
+  list.forEach(u=>{const r=u.role||'user';roles[r]=(roles[r]||0)+1;});
+  document.getElementById('userStats').innerHTML=`
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Registered</span><span style="float:right;font-weight:700;font-size:13px">${list.length}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Online</span><span style="float:right;font-weight:700;font-size:13px;color:#22c55e">${online.length}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Offline</span><span style="float:right;font-weight:700;font-size:13px;color:#6b7280">${list.length-online.length}</span></div>
+    ${Object.entries(roles).map(([r,c])=>`<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Role: ${r}</span><span style="float:right;font-weight:700;font-size:13px">${c}</span></div>`).join('')}
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Most followed</span><span style="float:right;font-weight:700;font-size:13px">${list.length?[...list].sort((a,b)=>(b.followers||0)-(a.followers||0))[0].name||'—':'—'}</span></div>
+    <div style="padding:4px 0"><span style="color:#9ca3af;font-size:12px">Top followers</span><span style="float:right;font-weight:700;font-size:13px">${list.length?[...list].sort((a,b)=>(b.followers||0)-(a.followers||0))[0].followers||0:0}</span></div>
+  `;
+}
+
+function updPosts(){
+  return fetch('/api/posts').then(r=>r.json()).then(list=>{
+    allPosts=list;document.getElementById('postBadge').textContent=list.length;
+    renderPosts(list);renderPostStats(list);renderRecentPostsMini(list);
+  }).catch(()=>{});
+}
+
+function renderPosts(list){
+  const el=document.getElementById('postList');
+  if(!list.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No posts yet</div>';return;}
+  el.innerHTML=list.map(p=>{const u=allUserMap[p.authorId]||{name:'Unknown',grad:'linear-gradient(135deg,#8b5cf6,#22d3ee)'};return`<div class="post-item"><div class="ph"><div class="pav" style="background:${u.grad||'linear-gradient(135deg,#8b5cf6,#22d3ee)'}">${(u.emoji||u.name||'?')[0]}</div><span class="pn">${esc(u.name||'Unknown')}</span><span class="pt">${fmtTime(p.ts)}</span></div><div class="pb">${esc(p.text)}</div><div class="ps"><span>❤ ${p.reactions}</span><span>💬 ${p.comments}</span><span>🔁 ${p.shares}</span></div></div>`;}).join('');
+}
+function filterPosts(){const q=document.getElementById('postSearch').value.toLowerCase();renderPosts(allPosts.filter(p=>(p.text||'').toLowerCase().includes(q)||(allUserMap[p.authorId]||{}).name?.toLowerCase().includes(q)));}
+
+function renderPostStats(list){
+  const totalRx=list.reduce((s,p)=>s+p.reactions,0),totalCx=list.reduce((s,p)=>s+p.comments,0),totalSh=list.reduce((s,p)=>s+p.shares,0);
+  const topPost=list.sort((a,b)=>b.reactions-a.reactions)[0];
+  document.getElementById('postStats').innerHTML=`
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Total posts</span><span style="float:right;font-weight:700;font-size:13px">${list.length}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Total reactions</span><span style="float:right;font-weight:700;font-size:13px">${fmtN(totalRx)}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Total comments</span><span style="float:right;font-weight:700;font-size:13px">${fmtN(totalCx)}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Total shares</span><span style="float:right;font-weight:700;font-size:13px">${fmtN(totalSh)}</span></div>
+    <div style="padding:4px 0"><span style="color:#9ca3af;font-size:12px">Top post by</span><span style="float:right;font-weight:700;font-size:13px">${topPost?(allUserMap[topPost.authorId]||{}).name||'Unknown':'—'} (${topPost?topPost.reactions:0} ❤)</span></div>
+  `;
+}
+function renderRecentPostsMini(list){
+  const el=document.getElementById('recentPostsMini');if(!el)return;
+  const recent=list.slice(0,15);
+  if(!recent.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No posts yet</div>';return;}
+  el.innerHTML=recent.map(p=>{const u=allUserMap[p.authorId]||{name:'Unknown',grad:'linear-gradient(135deg,#8b5cf6,#22d3ee)'};return`<div class="post-item"><div class="ph"><div class="pav" style="background:${u.grad||'linear-gradient(135deg,#8b5cf6,#22d3ee)'}">${(u.emoji||u.name||'?')[0]}</div><span class="pn">${esc(u.name||'Unknown')}</span><span class="pt">${fmtTime(p.ts)}</span></div><div class="pb">${esc(p.text)}</div><div class="ps"><span>❤ ${p.reactions}</span><span>💬 ${p.comments}</span></div></div>`;}).join('');
+}
+
+function updTrading(){
+  return fetch('/api/trading').then(r=>r.json()).then(d=>{
+    allTrading=d.wallets||[];
+    const totalCash=allTrading.reduce((s,u)=>s+(u.wallet?.cash||0),0);
+    const totalTrades=allTrading.reduce((s,u)=>s+((u.wallet?.txns||[]).length),0);
+    const adReg=allTrading.filter(u=>u.wallet?.adRegistered).length;
+    const adSpend=allTrading.reduce((s,u)=>s+(u.wallet?.adSpend||0),0);
+    document.getElementById('sTradingVol').textContent=fmtN(totalTrades);
+    document.getElementById('tTotalCash').textContent=fmtR(totalCash);
+    document.getElementById('tTotalTrades').textContent=fmtN(totalTrades);
+    document.getElementById('tAdRegistered').textContent=adReg+'/'+allTrading.length;
+    document.getElementById('tTotalAdSpend').textContent=fmtR(adSpend);
+    renderTraders(allTrading);
+    renderHoldings(allTrading);
+  }).catch(()=>{});
+}
+
+function renderTraders(list){
+  const el=document.getElementById('traderList');if(!el)return;
+  document.getElementById('leaderBadge').textContent=list.length;
+  if(!list.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No traders</div>';return;}
+  el.innerHTML=list.map((u,i)=>{
+    const holdingVal=Object.entries(u.wallet?.holdings||{}).reduce((s,[k,v])=>s+(v.qty||0)*(v.last||0),0);
+    const total=(u.wallet?.cash||0)+holdingVal;
+    const rankCls=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    return`<div class="trader-item"><span class="rank ${rankCls}">${i+1}</span><div class="av" style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:800;background:${u.grad||'linear-gradient(135deg,#8b5cf6,#22d3ee)'}">${(u.emoji||u.name||'?')[0]}</div><div class="info"><div class="nm">${esc(u.name||'Unknown')}</div><div class="meta">${fmtN(u.wallet?.txns?.length||0)} trades · ${(u.wallet?.adRegistered)?'Ad active':'No ads'}</div></div><div class="val"><div class="cash">${fmtR(total)}</div><div class="hold">cash ${fmtR(u.wallet?.cash||0)}</div></div></div>`;
+  }).join('');
+}
+function filterTraders(){const q=document.getElementById('traderSearch').value.toLowerCase();renderTraders(allTrading.filter(u=>(u.name||'').toLowerCase().includes(q)));}
+
+function renderHoldings(list){
+  const el=document.getElementById('holdingsList');if(!el)return;
+  const allHoldings=[];
+  list.forEach(u=>{Object.entries(u.wallet?.holdings||{}).forEach(([sym,h])=>{if(h.qty>0)allHoldings.push({user:u.name,sym,qty:h.qty,last:h.last||0,value:(h.qty||0)*(h.last||0)});});});
+  allHoldings.sort((a,b)=>b.value-a.value);
+  if(!allHoldings.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No holdings yet</div>';return;}
+  el.innerHTML=allHoldings.slice(0,20).map(h=>`<div class="trader-item"><div class="av" style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#8b5cf6,#22d3ee);display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:800">${h.sym.slice(0,3)}</div><div class="info"><div class="nm">${h.sym}</div><div class="meta">${esc(h.user)} · ${h.qty.toFixed(2)} units</div></div><div class="val"><div class="cash">${fmtR(h.value)}</div><div class="hold">@ ${fmtR(h.last)}</div></div></div>`).join('');
+}
+
+function updAds(){
+  return fetch('/api/ads').then(r=>r.json()).then(d=>{
+    allAds=d.ads||[];
+    document.getElementById('sbAds').textContent=d.active||0;
+    document.getElementById('sAdSpend').textContent=fmtR(d.totalSpend);
+    document.getElementById('aTotalSpend').textContent=fmtR(d.totalSpend);
+    document.getElementById('aTotalImpressions').textContent=fmtN(d.totalImpressions);
+    document.getElementById('aTotalClicks').textContent=fmtN(d.totalClicks);
+    document.getElementById('aActiveAds').textContent=d.active||0;
+    document.getElementById('adBadge').textContent=allAds.length;
+    document.getElementById('rAdRevenue').textContent=fmtR(d.totalSpend);
+    renderAds(allAds);renderAdPerf(allAds);renderRevenue();
+  }).catch(()=>{});
+}
+
+function renderAds(list){
+  const el=document.getElementById('adList');if(!el)return;
+  if(!list.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No ads yet</div>';return;}
+  el.innerHTML=list.map(a=>{
+    const status=a.status||'live';
+    const budget=a.budget||0,spent=a.spent||0,pct=budget?Math.min(100,Math.round(spent/budget*100)):0;
+    const ctr=a.impressions?((a.clicks||0)/a.impressions*100).toFixed(1):'0.0';
+    return`<div class="ad-item ${status}"><div class="ad-head"><span class="ad-status ${status}">${status}</span><span class="ad-owner">${esc(a.ownerName||'Unknown')}</span></div><div class="ad-title">${esc(a.title||'Untitled')}</div><div class="ad-body">${esc(a.body||'')}</div><div class="ad-stats"><span>👁 ${fmtN(a.impressions||0)}</span><span>🖱 ${fmtN(a.clicks||0)}</span><span>📊 ${ctr}% CTR</span><span>💰 ${fmtR(spent)} / ${fmtR(budget)}</span></div><div class="budget-bar"><div class="fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+}
+function filterAds(){const q=document.getElementById('adSearch').value.toLowerCase();renderAds(allAds.filter(a=>(a.title||'').toLowerCase().includes(q)||(a.ownerName||'').toLowerCase().includes(q)));}
+
+function renderAdPerf(list){
+  const el=document.getElementById('adPerf');if(!el)return;
+  const live=list.filter(a=>a.status==='live'),paused=list.filter(a=>a.status==='paused'),ended=list.filter(a=>a.status==='ended');
+  const topAd=list.sort((a,b)=>(b.clicks||0)-(a.clicks||0))[0];
+  document.getElementById('adPerf').innerHTML=`
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Live ads</span><span style="float:right;font-weight:700;font-size:13px;color:#22c55e">${live.length}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Paused</span><span style="float:right;font-weight:700;font-size:13px;color:#f59e0b">${paused.length}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Ended</span><span style="float:right;font-weight:700;font-size:13px;color:#6b7280">${ended.length}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Best CTR</span><span style="float:right;font-weight:700;font-size:13px">${topAd?((topAd.clicks||0)/Math.max(1,topAd.impressions||1)*100).toFixed(1)+'%':'—'}</span></div>
+    <div style="padding:4px 0"><span style="color:#9ca3af;font-size:12px">Top clicked</span><span style="float:right;font-weight:700;font-size:13px">${topAd?esc(topAd.title||'—'):'—'}</span></div>
+  `;
+}
+
+function renderRevenue(){
+  const tradingFees=allTrading.reduce((s,u)=>(s+(u.wallet?.txns||[]).reduce((ts,t)=>ts+(Math.abs(t.value||0)*0.001),0)),0);
+  const adRevenue=allAds.reduce((s,a)=>s+(a.spent||0),0);
+  const total=tradingFees+adRevenue;
+  document.getElementById('rTradingFees').textContent=fmtR(tradingFees);
+  document.getElementById('rTotalRevenue').textContent=fmtR(total);
+  document.getElementById('sbRevenue').textContent=fmtR(total);
+  document.getElementById('revenueBreakdown').innerHTML=`
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Ad revenue (100%)</span><span style="float:right;font-weight:700;font-size:13px;color:#22c55e">${fmtR(adRevenue)}</span></div>
+    <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Trading fees (0.1%)</span><span style="float:right;font-weight:700;font-size:13px;color:#f59e0b">${fmtR(tradingFees)}</span></div>
+    <div style="padding:4px 0"><span style="color:#9ca3af;font-size:12px">Total</span><span style="float:right;font-weight:700;font-size:13px;color:#22c55e">${fmtR(total)}</span></div>
+  `;
+  const earners=[...allTrading].sort((a,b)=>(b.wallet?.adSpend||0)-(a.wallet?.adSpend||0)).filter(u=>(u.wallet?.adSpend||0)>0).slice(0,10);
+  document.getElementById('earnerList').innerHTML=earners.length?earners.map(u=>`<div class="u-item"><div class="av" style="background:${u.grad||'linear-gradient(135deg,#8b5cf6,#22d3ee)'}">${(u.emoji||u.name||'?')[0]}</div><div class="info"><div class="nm">${esc(u.name||'Unknown')}</div><div class="meta">Ad spend: ${fmtR(u.wallet?.adSpend||0)}</div></div><span style="color:#22c55e;font-weight:700;font-size:13px">${fmtR(u.wallet?.adSpend||0)}</span></div>`).join(''):'<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No ad spenders yet</div>';
+}
+
+function updContacts(){
+  return fetch('/api/contacts').then(r=>r.json()).then(list=>{
+    allContacts=list;document.getElementById('sContacts').textContent=list.length;document.getElementById('contactBadge').textContent=list.length;
+    renderContacts(list);renderContactSources(list);
+  }).catch(()=>{});
+}
+
+function renderContacts(list){
+  const el=document.getElementById('contactsList');if(!el)return;
+  if(!list.length){el.innerHTML='<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No contacts synced yet</div>';return;}
+  el.innerHTML=list.map(c=>`<div class="ct-item"><div class="av">${((c.name||'?')[0]||'?')}</div><div><div class="nm">${esc(c.name)}</div><div class="meta">${esc(c.number||c.phone||'')} · by ${esc(c.syncedBy||'unknown')}</div></div></div>`).join('');
+}
+function filterContacts(){const q=document.getElementById('contactSearch').value.toLowerCase();renderContacts(allContacts.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.number||c.phone||'').includes(q)));}
+
+function renderContactSources(list){
+  const sources={};list.forEach(c=>{const by=c.syncedBy||'unknown';sources[by]=(sources[by]||0)+1;});
+  document.getElementById('contactSources').innerHTML=Object.entries(sources).sort((a,b)=>b[1]-a[1]).map(([name,count])=>`<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center"><span style="font-size:12px;color:#e5e7eb">${esc(name)}</span><span style="font-weight:700;font-size:13px;background:linear-gradient(135deg,#8b5cf6,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent">${count} contacts</span></div>`).join('')||'<div class="empty" style="text-align:center;padding:30px;color:#6b7280">No sources yet</div>';
+}
+
+/* LIVE LOG */
+const logEntries=[];
+function addEntry(ts,text){
+  logEntries.unshift({ts,text});if(logEntries.length>200)logEntries.length=200;
+  const html=logEntries.map(e=>`<div class="le"><span class="ts">${new Date(e.ts).toLocaleTimeString()}</span><span class="txt">${esc(e.text)}</span></div>`).join('');
+  const logEl=document.getElementById('log');if(logEl)logEl.innerHTML=html;
+  const logFull=document.getElementById('logFull');if(logFull)logFull.innerHTML=html;
+}
+
+function connectLog(){
+  const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/log');
+  ws.onopen=()=>{document.getElementById('status').textContent='Connected — live';document.getElementById('dot').style.display='';};
+  ws.onclose=()=>{document.getElementById('status').textContent='Reconnecting…';document.getElementById('dot').style.display='none';setTimeout(connectLog,2000);};
+  ws.onmessage=e=>{try{const d=JSON.parse(e.data);addEntry(d.ts,d.text);updStats();updUsers();updPosts();updTrading();updAds();}catch(_){}};
+  ws.onerror=()=>{};
+}
+connectLog();
+setInterval(()=>{updStats();updContacts();},10000);
+setInterval(()=>{updUsers();updPosts();updTrading();updAds();},15000);
+</script>
+</body>
+</html>
