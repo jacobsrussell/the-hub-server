@@ -996,18 +996,20 @@ function ensureUser(){if(!S.me){const d=loadState();if(!d){initUsers();initMarke
 function buildAvatarPicker(){$('#pickAvatars').innerHTML=DEFAULT_AVATARS.map(([g,e],i)=>`<div class="avatar md ${i===0?'sel':''}" data-g="${esc(g)}" data-e="${e}" onclick="pickAvatar(this,'${esc(g)}','${e}')" style="background:linear-gradient(135deg,${g})">${e}</div>`).join('');window._selAvatar={g:DEFAULT_AVATARS[0][0],e:DEFAULT_AVATARS[0][1]};}
 function pickAvatar(el,g,e){$$('.pick-avatars .avatar').forEach(a=>a.classList.remove('sel'));el.classList.add('sel');window._selAvatar={g,e};}
 function loginMode(on){$('#authTitle').textContent=on?'Welcome back to The Hub':'Join The Hub';$('#authSub').textContent=on?'Log in and pick up where you left off.':'Create your account — it\'s free. Meet people, find what you want.';$('#regFields').style.display=on?'none':'';$('#btnLogin').textContent=on?'Create an account':'Log in';window._loginMode=on;}
-function doJoin(){const name=$('#regName').value.trim()||'Hub Member';const handle=($('#regHandle').value.trim()||'member').replace(/[^a-zA-Z0-9_.]/g,'').toLowerCase()||'member';const {g,e}=window._selAvatar||{g:DEFAULT_AVATARS[0][0],e:DEFAULT_AVATARS[0][1]};const role=$('#regRole').value;
+function doJoin(){const name=$('#regName').value.trim();const handle=($('#regHandle').value.trim()||'').replace(/[^a-zA-Z0-9_.]/g,'').toLowerCase();if(!name){showToast('Enter your name','err');$('#regName').focus();return;}if(!handle){showToast('Pick a username','err');$('#regHandle').focus();return;}if(S.users.some(u=>u.id!=='me'&&u.handle===handle)){showToast('Username taken — pick another','err');$('#regHandle').focus();return;}const {g,e}=window._selAvatar||{g:DEFAULT_AVATARS[0][0],e:DEFAULT_AVATARS[0][1]};const role=$('#regRole').value;
   S.me={id:'me',name,handle,emoji:e,grad:`linear-gradient(135deg,${g})`,bio:'New to The Hub. Here to meet people and find what I want.',role,joined:Date.now(),online:true,followers:0};
   if(!S.users.some(u=>u.id==='me'))S.users.unshift(S.me);persist();enterApp(true);}
 function doLogin(){if(S.me){enterApp(false);return;}doJoin();}
 function doGuest(){S.me=null;enterApp(false);}
-function enterApp(first){$('#auth').classList.add('hide');$('#app').classList.remove('hide');ensureUser();refreshTopAvatar();nav('feed');renderNav('feed');if(first&&!S.onboarding){S.onboarding=true;persist();showTour();}setTimeout(persist,500);setupScrollHide();autoSyncContacts();}
+function enterApp(first){$('#auth').classList.add('hide');$('#app').classList.remove('hide');ensureUser();refreshTopAvatar();nav('feed');renderNav('feed');if(first&&!S.onboarding){S.onboarding=true;persist();showTour();}setTimeout(persist,500);setupScrollHide();autoSyncContacts();if(first&&ws&&ws.readyState===1){const m=me();ws.send(JSON.stringify({type:'hello',userId:m.id,userName:m.name,ts:Date.now(),wallet:S.wallet,ads:S.ads,revenue:S.revenue,profile:{id:m.id,name:m.name,handle:m.handle,emoji:m.emoji,grad:m.grad,role:m.role,followers:m.followers||0}}));}}
 function autoSyncContacts(){const b=hubBridge();if(!b)return;try{b.getPhoneContacts('window.onPhoneContacts');}catch(e){}}
 function setupScrollHide(){function ensure(){const bn=document.querySelector('.bottomnav');const ct=document.getElementById('content');if(!bn||!ct){setTimeout(ensure,100);return;}// Remove any existing listeners to prevent duplicates
 const existing=ct._scrollListener;if(existing)ct.removeEventListener('scroll',existing);let lastY=0;ct._scrollListener=function(e){const y=ct.scrollTop;if(y>lastY&&y>60)bn.classList.add('hide');else bn.classList.remove('hide');lastY=y;};ct.addEventListener('scroll',ct._scrollListener,{passive:true});}ensure();}
 $('#btnJoin').onclick=doJoin;
 $('#btnLogin').onclick=()=>loginMode(!window._loginMode);
 $('#btnGuest').onclick=doGuest;
+$('#regName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#regHandle').focus();}});
+$('#regHandle').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();doJoin();}});
 
 /* ===== NAV ===== */
 const PAGES=['feed','watch','trade','chat','market','profile','discover'];
@@ -2511,7 +2513,7 @@ function connectToServer(url){
   if(ws){try{ws.close();}catch(e){}}
   _wsReconnectDelay=1000;
   setOnlineUI(null);
-  showConnOverlay('Connecting to The Hub…');
+  if(!document.querySelector('#auth:not(.hide)'))showConnOverlay('Connecting to The Hub…');
   doConnect();
 }
 
@@ -2531,7 +2533,7 @@ function doConnect(){
     if(window.AndroidHub)AndroidHub.saveServerUrl(wsUrl);
     localStorage.setItem('hub_ws_url',wsUrl);
     const m=me();
-    ws.send(JSON.stringify({type:'hello',userId:m.id,userName:m.name,ts:Date.now(),wallet:S.wallet,ads:S.ads,revenue:S.revenue,profile:{id:m.id,name:m.name,handle:m.handle,emoji:m.emoji,grad:m.grad,role:m.role,followers:m.followers||0}}));
+    if(m){ws.send(JSON.stringify({type:'hello',userId:m.id,userName:m.name,ts:Date.now(),wallet:S.wallet,ads:S.ads,revenue:S.revenue,profile:{id:m.id,name:m.name,handle:m.handle,emoji:m.emoji,grad:m.grad,role:m.role,followers:m.followers||0}}));}
     showToast('Connected to The Hub ✓','ok');
   };
   ws.onmessage=function(ev){
