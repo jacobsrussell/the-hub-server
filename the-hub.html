@@ -2498,7 +2498,8 @@ function skipOffline(){hideConnOverlay();setOnlineUI(false);showToast('Offline m
 
 function setOnlineUI(on){
   const el=$('#topOnline');if(!el)return;
-  if(on){el.classList.remove('off');el.innerHTML='<span class="dot"></span>online';}
+  if(on===null){el.classList.remove('off');el.innerHTML='<span class="dot" style="background:#f59e0b"></span>connecting…';}
+  else if(on){el.classList.remove('off');el.innerHTML='<span class="dot"></span>online';}
   else{el.classList.add('off');el.innerHTML='<span class="dot"></span>offline';}
 }
 
@@ -2508,6 +2509,7 @@ function connectToServer(url){
   localStorage.setItem('hub_ws_url',wsUrl);
   if(ws){try{ws.close();}catch(e){}}
   _wsReconnectDelay=1000;
+  setOnlineUI(null);
   showConnOverlay('Connecting to The Hub…');
   doConnect();
 }
@@ -2538,6 +2540,7 @@ function doConnect(){
     wsConnected=false;setOnlineUI(false);
     if(document.querySelector('#auth:not(.hide)'))return;
     showConnOverlay('Connection lost. Reconnecting…');
+    setOnlineUI(null);
     wsRetryTimer=setTimeout(function(){
       _wsReconnectDelay=Math.min(_wsReconnectDelay*1.5,15000);
       doConnect();
@@ -2550,6 +2553,33 @@ function handleSyncMsg(msg){
   if(!msg||!msg.type)return;
   if(msg.type==='hello_ack')return;
   const m=me();
+
+  if(msg.type==='welcome'){
+    if(msg.online){
+      const onlineSet=new Set(msg.online);
+      S.users.forEach(u=>{if(u.id!=='me')u.online=onlineSet.has(u.id);});
+    }
+    if(msg.users){
+      msg.users.forEach(su=>{
+        const lu=S.users.find(u=>u.id===su.id);
+        if(lu){
+          if(su.followers!==undefined)lu.followers=su.followers;
+          if(su.role)lu.role=su.role;
+          if(su.online!==undefined)lu.online=su.online;
+          if(su.lastSeen)lu.lastSeen=su.lastSeen;
+        }else if(su.id!=='me'){
+          S.users.push(su);
+        }
+      });
+    }
+    persist();if(window._curPage==='feed')renderFeed();
+  }
+
+  if(msg.type==='presence'&&msg.online){
+    const onlineSet=new Set(msg.online);
+    S.users.forEach(u=>{if(u.id!=='me')u.online=onlineSet.has(u.id);});
+    persist();if(window._curPage==='feed')renderFeed();if(window._curPage==='chat')renderChatList();
+  }
 
   if(msg.type==='post'&&msg.post&&msg.post.authorId!==m.id){
     if(!S.posts.find(x=>x.id===msg.post.id)){
