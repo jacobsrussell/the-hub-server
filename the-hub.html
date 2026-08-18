@@ -2459,6 +2459,7 @@ document.addEventListener('click',e=>{if(!e.target.closest('.reactions-pop'))$$(
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeChat();closeTrade();closeCreate();closeNotifs();closeComments();}});
 ensureUser();
 if(S.me){enterApp(false);}else{loginMode(false);buildAvatarPicker();}
+connectToServer();
 setInterval(()=>{S.users.forEach(u=>{if(u.id!=='me'&&Math.random()<0.1)u.online=Math.random()>0.3;});},30000);
 setInterval(refreshChatBadge,5000);
 updateNotifBadge();refreshChatBadge();renderSidebar();
