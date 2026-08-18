@@ -1013,12 +1013,7 @@ $('#regHandle').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefa
 
 /* ===== NAV ===== */
 const PAGES=['feed','watch','trade','chat','market','profile','discover'];
-function nav(p){window._curPage=p;closeSearch();closeSidebar();$('#sidebar').classList.remove('open');$('#sideOverlay').classList.add('hide');}
-  if(p==='feed')renderFeed();else if(p==='watch')renderWatch();else if(p==='trade')renderTrade();
-  else if(p==='chat')renderChatList();else if(p==='profile')renderProfile('me');
-  else if(p==='notifications')openNotifs();else if(p==='market')renderMarket();else if(p==='discover')renderDiscover();
-  else if(p==='revenue')renderRevenue();else if(p==='control')renderControl();
-  if(PAGES.includes(p))renderNav(p);renderSidebar();}
+function nav(p){window._curPage=p;closeSearch();closeSidebar();$('#sidebar').classList.remove('open');$('#sideOverlay').classList.add('hide');if(p==='feed')renderFeed();else if(p==='watch')renderWatch();else if(p==='trade')renderTrade();else if(p==='chat')renderChatList();else if(p==='profile')renderProfile('me');else if(p==='notifications')openNotifs();else if(p==='market')renderMarket();else if(p==='discover')renderDiscover();else if(p==='revenue')renderRevenue();else if(p==='control')renderControl();if(PAGES.includes(p))renderNav(p);renderSidebar();}
 function renderNav(p){$$('.bn-item').forEach(b=>{b.classList.toggle('active',b.dataset.nav===p);});}
 /* ===== SIDE BAR ===== */
 function renderSidebar(){const m=me();const el=$('#sidebar');if(!el)return;
