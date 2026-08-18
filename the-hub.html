@@ -263,7 +263,7 @@ input,textarea,select{font-family:inherit;color:inherit}
 .v-progress{position:absolute;right:20px;top:50%;transform:translateY(-50%);z-index:8;width:4px;height:52%;background:rgba(255,255,255,.22);border-radius:99px}
 .v-progress .vfill{position:absolute;bottom:0;left:0;width:100%;background:#fff;border-radius:99px}
 .v-top-left{position:absolute;top:14px;left:16px;z-index:8;display:flex;align-items:center;gap:8px}
-.pill{background:rgba(255,255,255,.14);backdrop-filter:blur(10px);border-radius:99px;padding:6px 13px;font-size:12px;font-weight:800}
+.v-pill{background:rgba(255,255,255,.14);backdrop-filter:blur(10px);border-radius:99px;padding:6px 13px;font-size:12px;font-weight:800}
 .mute-btn{position:absolute;top:12px;right:16px;z-index:8;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.14);display:grid;place-items:center;font-size:17px}
 .upload-float{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:45;display:flex;gap:10px}
 .upload-float button{background:rgba(8,11,26,.7);backdrop-filter:blur(12px);border:1px solid var(--brd);padding:10px 18px;border-radius:99px;font-size:13px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px}
@@ -964,7 +964,7 @@ function seededChats(){if(Object.keys(S.chats).length)return;const now=Date.now(
   c('me',S.users[11].id,[{f:'them',t:'Morning! Did you see the market open? 🚀',ts:now-3600e3,st:'read'},{f:'me',t:'I did, green across the board',ts:now-3500e3,st:'read'},{f:'them',t:'NVDA printing again. Absurd numbers',ts:now-3400e3,st:'read'}]);
   c('me',S.users[9].id,[{f:'them',t:'Filming in the city today 🎬',ts:now-7200e3,st:'read'},{f:'me',t:'Send me the behind the scenes!',ts:now-7100e3,st:'read'},{f:'them',t:'Coming your way when it\'s edited 👀',ts:now-7000e3,st:'read'}]);
   c('me',S.users[4].id,[{f:'them',t:'Crypto just did the thing again 😂',ts:now-5000e3,st:'read'},{f:'me',t:'Which thing? The dump or the pump?',ts:now-4900e3,st:'read'},{f:'them',t:'Yes.',ts:now-4800e3,st:'read'}]);}
-function seedGroups(){if(S.groups.length)return;S.groups=GROUPS_SEED.map(g=>({...g,msgs:g.msgs.map(m=>({id:uid(),f:(S.users[m.f]||{}).id||'me',t:m.t,ts:m.ts,st:m.st}))}));}
+function seedGroups(){if(S.groups.length)return;S.groups=GROUPS_SEED.map(g=>({...g,members:(g.members||[]).map(mi=>(S.users[mi]||{}).id||'me'),msgs:g.msgs.map(m=>({id:uid(),f:(S.users[m.f]||{}).id||'me',t:m.t,ts:m.ts,st:m.st}))}));}
 function seedItems(){if(S.items.length)return;S.items=ITEMS_SEED.map(it=>{const u=S.users[it.seller]||S.users[0];return {id:uid(),sellerId:u.id,title:it.title,price:it.price,emoji:it.emoji,cat:it.cat,desc:it.desc,g1:it.g1,g2:it.g2,sold:false,ts:Date.now()-Math.random()*86400e3};});}
 function seedWatchlist(){if(!S.watchlist.length)S.watchlist=['BTC','NVDA','ETH','TSLA','SOL'];}
 function seedBots(){S.users.slice(1).forEach((u,i)=>{if(S.portfolioByUser[u.id])return;const r=mulberry32(i+99);const nHold=2+Math.floor(r()*4);const syms=[...CRYPTO_SYMS,...STOCK_SYMS];const hold={};let tot=0;for(let j=0;j<nHold;j++){const sym=syms[Math.floor(r()*syms.length)];const qty=(r()*40+2).toFixed(2);hold[sym]=parseFloat(qty);tot+=qty*S.prices[sym].p;}const base=50000+r()*450000;const pnl=(r()-0.42)*(base/3);S.portfolioByUser[u.id]={hold,pnl,cash:Math.max(0,base-tot+pnl)};});}
@@ -980,7 +980,7 @@ function ensureUser(){if(!S.me){const d=loadState();if(!d){initUsers();initMarke
   if(!S.items||!S.items.length)seedItems();
   if(!S.groups||!S.groups.length)seedGroups();
   if(!S.ads||!S.ads.length)seedAds();
-  if(!S.wallet||!S.wallet.cash)S.wallet={cash:100000,holdings:{},txns:[],history:[],adRegistered:false,adSpend:0,funded:0};
+  if(!S.wallet||S.wallet.cash===undefined)S.wallet={cash:100000,holdings:{},txns:[],history:[],adRegistered:false,adSpend:0,funded:0};
   if(!S.rates)S.rates={creatorPerView:0.02,viewerPerView:0.005,hubCut:0.3,minWithdraw:100,withdrawFee:0.05};
   if(!S.flags)S.flags={monetization:true,payouts:true,uploads:true};
   if(!S.revenue||S.revenue.wallet===undefined)S.revenue={wallet:0,viewerEarned:0,creatorEarned:0,deposited:0,withdrawn:0,pending:0,hubEarned:0,history:[]};
@@ -1618,7 +1618,7 @@ function publishUploadedVideo(){const cap=$('#cpVideoCap').value.trim();if(!cap)
 function sellItem(){const t=$('#itTitle').value.trim();const pr=parseFloat($('#itPrice').value)||0;const cat=$('#itCat').value;const d=$('#itDesc').value.trim();const m=me();
   if(!t||pr<=0){showToast('Add a title and valid price','err');return;}
   const g1=AD_ART[Math.floor(Math.random()*AD_ART.length)].match(/#[0-9a-f]{6}/g)[0];const g2=AD_ART[Math.floor(Math.random()*AD_ART.length)].match(/#[0-9a-f]{6}/g)[0];
-  const item={id:uid(),sellerId:m.id,title:t,price:pr,emoji:window._itIcon||'📦',cat,desc:d||'New listing.',g1:'#'+g1,g2:'#'+g2,sold:false,ts:Date.now()};
+  const item={id:uid(),sellerId:m.id,title:t,price:pr,emoji:window._itIcon||'📦',cat,desc:d||'New listing.',g1:g1.startsWith('#')?g1:'#'+g1,g2:g2.startsWith('#')?g2:'#'+g2,sold:false,ts:Date.now()};
   S.myItems=S.myItems||[];S.myItems.unshift(item);S.items.unshift(item);persist();closeCreate();nav('market');showToast('Item listed for sale ✓','ok');}
 $('#videoFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const src=URL.createObjectURL(f);S.pendingUpload={src,name:f.name};showToast(`Selected: ${f.name}`,'ok');setCreateType('video');openCreate();});
 
@@ -1647,7 +1647,7 @@ function videoSlide(v,i){const u=S.users.find(x=>x.id===v.creatorId)||S.users[0]
     ${media}
     <div class="v-progress" id="vp_${v.id}" onclick="event.stopPropagation()"><div class="vfill" id="vf_${v.id}"></div></div>
     <div class="mute-btn" onclick="event.stopPropagation();toggleMute()">🔊</div>
-    <div class="v-top-left"><span class="pill">${isUpload?'● Your upload':'● Live'}</span></div>
+    <div class="v-top-left"><span class="v-pill">${isUpload?'● Your upload':'● Live'}</span></div>
     <div class="v-bottom">
       <div class="v-meta">${avatarHTML(u,'sm')}<span class="v-author">@${esc(u.handle)}</span><span class="v-follow" onclick="event.stopPropagation();toggleFollow('${u.id}')">${isFollowing(u.id)?'Following':'Follow'}</span></div>
       <div class="v-caption">${esc(v.caption)}</div>
@@ -1716,7 +1716,7 @@ function playVoiceNote(dur){const ac=audioCtx();if(!ac)return;const now=ac.curre
 
 /* ===== CHAT ===== */
 function chatKey(a,b){return [a,b].sort().join('|');}
-function unreadCount(){let n=0;Object.values(S.chats).forEach(c=>{(c.msgs||[]).forEach(m=>{if(m.f==='them'&&m.st!=='read')n++;});});S.groups.forEach(g=>{(g.msgs||[]).forEach(m=>{if(m.f!=='me'&&m.st!=='read'&&g.lastReadBy&&!g.lastReadBy.includes(m.id))n++;});});return n;}
+function unreadCount(){let n=0;Object.values(S.chats).forEach(c=>{(c.msgs||[]).forEach(m=>{if(m.f==='them'&&m.st!=='read')n++;});});S.groups.forEach(g=>{(g.msgs||[]).forEach(m=>{if(m.f!=='me'&&m.st!=='read'&&(g.lastRead||0)<m.ts)n++;});});return n;}
 function refreshChatBadge(){const n=unreadCount();const b=$('#chatBadge');if(!b)return;b.classList.toggle('hide',n===0);b.textContent=n>9?'9+':n;const s=$('#sdChatBadge');if(s){s.classList.toggle('hide',n===0);s.textContent=n>9?'9+':n;}}
 function renderChatList(){const m=me();
   const convs=Object.values(S.chats).filter(c=>(c.a==='me'||c.b==='me')&&S.users.some(x=>x.id===(c.a==='me'?c.b:c.a))).map(c=>{const o=c.a==='me'?c.b:c.a;const u=S.users.find(x=>x.id===o);const last=c.msgs[c.msgs.length-1];const unread=(c.msgs||[]).filter(x=>x.f==='them'&&x.st!=='read').length;return {kind:'dm',u,last,unread,key:chatKey('me',o)};});
@@ -2442,7 +2442,7 @@ function showTour(){const steps=[
   {t:'Home & Chat',p:'Post, react, and message anyone instantly. Groups and voice notes included.'},
   {t:'Watch & Upload',p:'Scroll the video feed, double-tap to like, and upload your own videos from your phone.'},
   {t:'Trade in Rands',p:'Start with R100,000 of paper money. Trade stocks & crypto in ZAR.'},
-  {t:'Advertise (R50)',p:'Register your ad account for R50 and run adverts across your contacts` feeds and chats.'},
+  {t:'Advertise (R50)',p:'Register your ad account for R50 and run adverts across your contacts\' feeds and chats.'},
   {t:'Marketplace',p:'Find what you want — or sell it. Everything happens inside the Hub.'},
   {t:'Earn Money 💰',p:'Watch videos and upload your own to earn. From R100 you can withdraw to your bank — the Hub takes a small cut of every earning.'}];
   let i=0;const showStep=()=>{document.querySelectorAll('.tour-step').forEach(x=>x.remove());if(i>=steps.length)return;
@@ -2580,11 +2580,10 @@ function handleSyncMsg(msg){
 
   if(msg.type==='chat'&&msg.to===m.id&&msg.msg){
     const fromUser=S.users.find(u=>u.id===msg.from);
-    const pairKey=[msg.from,m.id].sort().join('_');
-    let thread=S.dmThreads.find(t=>t.pairKey===pairKey);
-    if(!thread){thread={id:uid(),pairKey,members:[msg.from,m.id],msgs:[],unread:{},createdAt:Date.now()};S.dmThreads.push(thread);}
-    if(!thread.msgs.find(x=>x.id===msg.msg.id)){
-      thread.msgs.push({id:msg.msg.id||uid(),f:msg.from,t:msg.msg.text||msg.msg.t||'',ts:msg.msg.ts||Date.now(),st:'sent'});
+    const key=chatKey(msg.from,m.id);
+    if(!S.chats[key])S.chats[key]={a:msg.from,b:m.id,msgs:[]};
+    if(!S.chats[key].msgs.find(x=>x.id===msg.msg.id)){
+      S.chats[key].msgs.push({id:msg.msg.id||uid(),f:msg.from,t:msg.msg.text||msg.msg.t||'',ts:msg.msg.ts||Date.now(),st:'sent'});
       persist();refreshChatBadge();
       if(window._curPage==='chat'&&window._chatOther===msg.from){renderMessages();}
       showToast('Message from '+(fromUser?fromUser.name:'Someone'),'ok');

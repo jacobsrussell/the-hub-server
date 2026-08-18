@@ -68,6 +68,13 @@ function seed() {
   save();
 }
 
+/* ──────────────────────────── dashboard log stream ──────────────────── */
+const logClients = new Set();
+function log(text) {
+  const entry = { ts: Date.now(), text };
+  for (const ws of logClients) { if (ws.readyState === 1) ws.send(JSON.stringify(entry)); }
+}
+
 /* ──────────────────────────── connected clients ──────────────────────── */
 const clients = new Map();
 
@@ -108,9 +115,14 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (req.method === 'GET' && req.url === '/dashboard') {
-    const html = fs.readFileSync(path.join(__dirname, 'dashboard.html'), 'utf8');
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...cors });
-    res.end(html);
+    try {
+      const html = fs.readFileSync(path.join(__dirname, 'dashboard.html'), 'utf8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...cors });
+      res.end(html);
+    } catch (_) {
+      res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8', ...cors });
+      res.end('<h1>Dashboard not found</h1>');
+    }
     return;
   }
   if (req.method === 'GET' && req.url === '/api/stats') {
@@ -167,6 +179,7 @@ const server = http.createServer((req, res) => {
       const bVal = (b.wallet.cash || 0) + Object.entries(b.wallet.holdings || {}).reduce((s, [k, v]) => s + (v.qty || 0) * (v.last || 0), 0);
       return bVal - aVal;
     });
+    res.writeHead(200, { 'Content-Type': 'application/json', ...cors });
     res.end(JSON.stringify({ wallets }));
     return;
   }
@@ -181,6 +194,7 @@ const server = http.createServer((req, res) => {
     const totalSpend = allAds.reduce((s, a) => s + (a.spent || 0), 0);
     const totalImpressions = allAds.reduce((s, a) => s + (a.impressions || 0), 0);
     const totalClicks = allAds.reduce((s, a) => s + (a.clicks || 0), 0);
+    res.writeHead(200, { 'Content-Type': 'application/json', ...cors });
     res.end(JSON.stringify({ ads: allAds, totalSpend, totalImpressions, totalClicks, active: allAds.filter(a => a.status === 'live' || a.status === 'paused').length }));
     return;
   }
@@ -254,7 +268,7 @@ wss.on('connection', (ws, req) => {
 
       case 'post': {
         const p = msg.post;
-        if (!store.posts.find(x => x.id === p.id)) {
+        if (p && p.id && !store.posts.find(x => x.id === p.id)) {
           store.posts.push(p);
           if (store.posts.length > 500) store.posts = store.posts.slice(-500);
         }
@@ -276,7 +290,7 @@ wss.on('connection', (ws, req) => {
 
       case 'comment': {
         const p = store.posts.find(x => x.id === msg.postId);
-        if (p) {
+        if (p && msg.comment && msg.comment.id) {
           (p.comments = p.comments || []);
           if (!p.comments.find(x => x.id === msg.comment.id)) p.comments.push(msg.comment);
         }
@@ -320,7 +334,7 @@ wss.on('connection', (ws, req) => {
 
       case 'groupMsg': {
         const g = store.groups[msg.groupId];
-        if (g) {
+        if (g && Array.isArray(g.members)) {
           const gm = { id: rid(), f: msg.from, t: msg.text, ts: msg.ts || Date.now(), st: 'sent' };
           g.msgs = g.msgs || [];
           g.msgs.push(gm);
@@ -334,7 +348,7 @@ wss.on('connection', (ws, req) => {
 
       case 'groupCreate': {
         const g = msg.group;
-        if (g && g.id) {
+        if (g && g.id && g.name) {
           store.groups[g.id] = { ...g, msgs: g.msgs || [] };
           (g.members || []).forEach(uid => {
             sendTo(uid, { type: 'groupCreate', group: store.groups[g.id] });
@@ -355,6 +369,7 @@ wss.on('connection', (ws, req) => {
           if (msg.wallet) store.users[msg.userId].wallet = msg.wallet;
           if (msg.ads) store.users[msg.userId].ads = msg.ads;
           if (msg.revenue) store.users[msg.userId].revenue = msg.revenue;
+          save();
         }
         break;
       }
@@ -369,14 +384,11 @@ wss.on('connection', (ws, req) => {
       log(`- ${c.profile ? c.profile.name : c.userId} disconnected  (online: ${onlineIds().length})`);
     }
   });
-});
 
-/* ──────────────────────────── dashboard log stream ──────────────────── */
-const logClients = new Set();
-function log(text) {
-  const entry = { ts: Date.now(), text };
-  for (const ws of logClients) { if (ws.readyState === 1) ws.send(JSON.stringify(entry)); }
-}
+  ws.on('error', () => {
+    clients.delete(ws);
+  });
+});
 
 /* ──────────────────────────── start ──────────────────────────── */
 load();

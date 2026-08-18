@@ -377,7 +377,7 @@ function filterPosts(){const q=document.getElementById('postSearch').value.toLow
 
 function renderPostStats(list){
   const totalRx=list.reduce((s,p)=>s+p.reactions,0),totalCx=list.reduce((s,p)=>s+p.comments,0),totalSh=list.reduce((s,p)=>s+p.shares,0);
-  const topPost=list.sort((a,b)=>b.reactions-a.reactions)[0];
+  const topPost=[...list].sort((a,b)=>b.reactions-a.reactions)[0];
   document.getElementById('postStats').innerHTML=`
     <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Total posts</span><span style="float:right;font-weight:700;font-size:13px">${list.length}</span></div>
     <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Total reactions</span><span style="float:right;font-weight:700;font-size:13px">${fmtN(totalRx)}</span></div>
@@ -462,7 +462,7 @@ function filterAds(){const q=document.getElementById('adSearch').value.toLowerCa
 function renderAdPerf(list){
   const el=document.getElementById('adPerf');if(!el)return;
   const live=list.filter(a=>a.status==='live'),paused=list.filter(a=>a.status==='paused'),ended=list.filter(a=>a.status==='ended');
-  const topAd=list.sort((a,b)=>(b.clicks||0)-(a.clicks||0))[0];
+  const topAd=[...list].sort((a,b)=>(b.clicks||0)-(a.clicks||0))[0];
   document.getElementById('adPerf').innerHTML=`
     <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Live ads</span><span style="float:right;font-weight:700;font-size:13px;color:#22c55e">${live.length}</span></div>
     <div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)"><span style="color:#9ca3af;font-size:12px">Paused</span><span style="float:right;font-weight:700;font-size:13px;color:#f59e0b">${paused.length}</span></div>
@@ -520,7 +520,7 @@ function connectLog(){
   const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host+'/log');
   ws.onopen=()=>{document.getElementById('status').textContent='Connected — live';document.getElementById('dot').style.display='';};
   ws.onclose=()=>{document.getElementById('status').textContent='Reconnecting…';document.getElementById('dot').style.display='none';setTimeout(connectLog,2000);};
-  ws.onmessage=e=>{try{const d=JSON.parse(e.data);addEntry(d.ts,d.text);updStats();updUsers();updPosts();updTrading();updAds();}catch(_){}};
+  ws.onmessage=e=>{try{const d=JSON.parse(e.data);addEntry(d.ts,d.text);updStats();}catch(_){}};
   ws.onerror=()=>{};
 }
 connectLog();
