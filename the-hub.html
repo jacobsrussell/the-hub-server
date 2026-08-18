@@ -2468,12 +2468,11 @@ updateNotifBadge();refreshChatBadge();renderSidebar();
 let ws=null, wsConnected=false, wsUrl=null, wsRetryTimer=null, _wsReconnectDelay=1000;
 
 function getWsUrl(){
-  if(window.AndroidHub){
-    var detected=AndroidHub.detectServer();
-    if(detected&&detected.indexOf('://')>0)return detected;
-  }
   const saved=localStorage.getItem('hub_ws_url');
   if(saved&&saved.indexOf('://')>0)return saved;
+  if(window.AndroidHub){
+    try{var detected=AndroidHub.detectServer();if(detected&&detected.indexOf('://')>0)return detected;}catch(e){}
+  }
   if(location.protocol==='https:'){
     return 'wss://'+location.host;
   }
@@ -2539,8 +2538,7 @@ function doConnect(){
   };
   ws.onclose=function(){
     wsConnected=false;setOnlineUI(false);
-    if(document.querySelector('#auth:not(.hide)'))return;
-    showConnOverlay('Connection lost. Reconnecting…');
+    if(!document.querySelector('#auth:not(.hide)'))showConnOverlay('Connection lost. Reconnecting…');
     setOnlineUI(null);
     wsRetryTimer=setTimeout(function(){
       _wsReconnectDelay=Math.min(_wsReconnectDelay*1.5,15000);
