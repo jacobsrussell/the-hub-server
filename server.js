@@ -189,7 +189,14 @@ const server = http.createServer((req, res) => {
 });
 
 /* ──────────────────────────── WebSocket ──────────────────────────── */
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (req, socket, head) => {
+  const url = req.url || '/';
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    wss.emit('connection', ws, req);
+  });
+});
 
 wss.on('connection', (ws, req) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';

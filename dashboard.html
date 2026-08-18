@@ -301,7 +301,7 @@ function doLogin(){
   const p=document.getElementById('loginPass').value;
   if(u==='admin'&&p==='thehub123'){
     document.getElementById('loginPage').classList.add('hide');
-    document.getElementById('dashContent').style.display='flex';
+    document.getElementById('dashContent').classList.remove('hide');
     refreshAll();
   } else {
     document.getElementById('loginErr').style.display='block';
