@@ -2472,14 +2472,11 @@ let ws=null, wsConnected=false, wsUrl=null, wsRetryTimer=null, _wsReconnectDelay
 function getWsUrl(){
   const saved=localStorage.getItem('hub_ws_url');
   if(saved&&saved.indexOf('://')>0)return saved;
-  if(window.AndroidHub){
-    try{var detected=AndroidHub.detectServer();if(detected&&detected.indexOf('://')>0)return detected;}catch(e){}
-  }
-  if(location.protocol==='https:'){
+  if(location.protocol==='https:'&&location.host!=='appassets.androidplatform.net'){
     return 'wss://'+location.host;
   }
-  if(location.host&&location.host!=='')return 'ws://'+location.host;
-  return 'ws://127.0.0.1:3000';
+  if(location.host&&location.host!==''&&location.host!=='appassets.androidplatform.net')return 'ws://'+location.host;
+  return 'wss://the-hub-server.onrender.com';
 }
 
 function sendWS(data){
