@@ -1001,7 +1001,7 @@ function doJoin(){const name=$('#regName').value.trim();const handle=($('#regHan
   if(!S.users.some(u=>u.id==='me'))S.users.unshift(S.me);persist();enterApp(true);}
 function doLogin(){if(S.me){enterApp(false);return;}doJoin();}
 function doGuest(){S.me=null;enterApp(false);}
-function enterApp(first){$('#auth').classList.add('hide');$('#app').classList.remove('hide');ensureUser();refreshTopAvatar();nav('feed');renderNav('feed');if(first&&!S.onboarding){S.onboarding=true;persist();showTour();}setTimeout(persist,500);setupScrollHide();autoSyncContacts();if(first)connectToServer();if(ws&&ws.readyState===1){const m=me();if(m){ws.send(JSON.stringify({type:'hello',userId:m.id,userName:m.name,ts:Date.now(),wallet:S.wallet,ads:S.ads,revenue:S.revenue,profile:{id:m.id,name:m.name,handle:m.handle,emoji:m.emoji,grad:m.grad,role:m.role,followers:m.followers||0}}));}}}
+function enterApp(first){$('#auth').classList.add('hide');$('#app').classList.remove('hide');ensureUser();refreshTopAvatar();nav('feed');renderNav('feed');if(first&&!S.onboarding){S.onboarding=true;persist();showTour();}setTimeout(persist,500);setupScrollHide();autoSyncContacts();if(first){connectToServerSilent();}else if(!ws||ws.readyState!==1){connectToServer();}else{const m=me();if(m){ws.send(JSON.stringify({type:'hello',userId:m.id,userName:m.name,ts:Date.now(),wallet:S.wallet,ads:S.ads,revenue:S.revenue,profile:{id:m.id,name:m.name,handle:m.handle,emoji:m.emoji,grad:m.grad,role:m.role,followers:m.followers||0}}));}}}
 function autoSyncContacts(){const b=hubBridge();if(!b)return;try{b.getPhoneContacts('window.onPhoneContacts');}catch(e){}}
 function setupScrollHide(){function ensure(){const bn=document.querySelector('.bottomnav');const ct=document.getElementById('content');if(!bn||!ct){setTimeout(ensure,100);return;}// Remove any existing listeners to prevent duplicates
 const existing=ct._scrollListener;if(existing)ct.removeEventListener('scroll',existing);let lastY=0;ct._scrollListener=function(e){const y=ct.scrollTop;if(y>lastY&&y>60)bn.classList.add('hide');else bn.classList.remove('hide');lastY=y;};ct.addEventListener('scroll',ct._scrollListener,{passive:true});}ensure();}
@@ -2467,7 +2467,7 @@ setInterval(refreshChatBadge,5000);
 updateNotifBadge();refreshChatBadge();renderSidebar();
 
 /* ===== REAL-TIME SYNC LAYER ===== */
-let ws=null, wsConnected=false, wsUrl=null, wsRetryTimer=null, _wsReconnectDelay=1000;
+let ws=null, wsConnected=false, wsEverConnected=false, wsUrl=null, wsRetryTimer=null, _wsReconnectDelay=1000;
 
 function getWsUrl(){
   const saved=localStorage.getItem('hub_ws_url');
@@ -2509,7 +2509,17 @@ function connectToServer(url){
   if(ws){try{ws.close();}catch(e){}}
   _wsReconnectDelay=1000;
   setOnlineUI(null);
-  if(!document.querySelector('#auth:not(.hide)'))showConnOverlay('Connecting to The Hub…');
+  showConnOverlay('Connecting to The Hub…');
+  doConnect();
+}
+
+function connectToServerSilent(){
+  if(wsUrl&&ws&&ws.readyState===1)return;
+  if(!wsUrl)wsUrl=getWsUrl();
+  localStorage.setItem('hub_ws_url',wsUrl);
+  if(ws){try{ws.close();}catch(e){}}
+  _wsReconnectDelay=1000;
+  setOnlineUI(null);
   doConnect();
 }
 
@@ -2524,7 +2534,7 @@ function retryConnect(){
 function doConnect(){
   try{ws=new WebSocket(wsUrl);}catch(e){onConnFail('Cannot reach server');return;}
   ws.onopen=function(){
-    wsConnected=true;clearTimeout(wsRetryTimer);_wsReconnectDelay=1000;
+    wsConnected=true;wsEverConnected=true;clearTimeout(wsRetryTimer);_wsReconnectDelay=1000;
     hideConnOverlay();setOnlineUI(true);
     if(window.AndroidHub)AndroidHub.saveServerUrl(wsUrl);
     localStorage.setItem('hub_ws_url',wsUrl);
@@ -2537,7 +2547,7 @@ function doConnect(){
   };
   ws.onclose=function(){
     wsConnected=false;setOnlineUI(false);
-    if(!document.querySelector('#auth:not(.hide)'))showConnOverlay('Connection lost. Reconnecting…');
+    if(wsEverConnected&&!document.querySelector('#auth:not(.hide)'))showConnOverlay('Connection lost. Reconnecting…');
     setOnlineUI(null);
     wsRetryTimer=setTimeout(function(){
       _wsReconnectDelay=Math.min(_wsReconnectDelay*1.5,15000);
